@@ -26,8 +26,8 @@ class TraderBot():
         self.accountvalue.reset_index()
     
 
-    def buy(self, ticker, price, amount):
-        amount = min(self.cash // price, amount)
+    def buy(self, ticker, price, amount, available):
+        amount = min(self.cash // price, amount, available)
         self.cash -= (price * amount)
         self.position[ticker] += amount
         self.tradelog[ticker].append('Buy ' + ticker + ' at ' + str(price) + ' for ' + str(amount))
