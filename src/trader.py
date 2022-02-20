@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 
 class Trader():
-    def __init__(self, strategy, stocks, commodities, aggressiveness=1.01, cash=100000):
+    def __init__(self, strategy, stocks, commodities, aggressiveness=1.01, cash=1000000):
         self.market = Market(stocks, commodities)
 
         self.startDate = self.market.startDate
@@ -24,16 +24,15 @@ class Trader():
         self.date = self.market.startDate
         self.account = TraderBot(self.startDate, cash)
 
-
         if (strategy == 'Leveraged Pair'):
             self.strategy = Leveraged_Strategy(stocks[0], stocks[1], 3, aggressiveness)
         else:
             self.strategy = None
     
+    
     def action(self):
         while (self.date <= self.endDate):
             quotes = self.market.getMarket(self.date)
-            # print(quotes)
             if (quotes != None):
                 if (self.strategy.name == 'Leveraged Pair'):
                     stockAPrice = quotes[self.strategy.stockA]

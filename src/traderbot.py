@@ -28,7 +28,6 @@ class TraderBot():
     
 
     def buy(self, ticker, price, amount):
-        amount = min(self.cash // price, amount)
         self.cash -= price * amount
         self.position[ticker] += amount
         self.tradelog[ticker].append('Buy ' + ticker + ' at ' + str(price) + ' for ' + str(amount))

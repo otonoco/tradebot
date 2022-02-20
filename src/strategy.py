@@ -26,9 +26,9 @@ class Leveraged_Strategy():
         stock_a_change = (stock_a_today / self.lastA) - 1
         stock_b_change = (stock_b_today / self.lastB) - 1
         if (stock_a_change > self.threshold * self.ratio * stock_b_change):
-            allocation = -3
+            allocation = -20
         elif (stock_a_change < -self.threshold * self.ratio * stock_b_change):
-            allocation = 3
+            allocation = 20
         else:
             allocation = 0
         
