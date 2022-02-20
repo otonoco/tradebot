@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 
 class Trader():
-    def __init__(self, strategy, stocks, commodities, aggressiveness=1.001, cash=1000000):
+    def __init__(self, strategy, stocks, commodities, aggressiveness=1.01, cash=100000):
         self.market = Market(stocks, commodities)
 
         self.startDate = self.market.startDate
@@ -47,27 +47,25 @@ class Trader():
                     bshares = int(-allocation * AClose * self.strategy.ratio - self.account.position[self.strategy.stockB])
                     
                     if (ashares > 0):
+                        self.account.sell(self.strategy.stockB, BClose, abs(bshares))
                         self.account.buy(self.strategy.stockA, AClose, ashares)
                     elif (ashares < 0):
                         self.account.sell(self.strategy.stockA, AClose, abs(ashares))
-                    
-                    if (bshares > 0):
                         self.account.buy(self.strategy.stockB, BClose, bshares)
-                    elif (bshares < 0):
-                        self.account.sell(self.strategy.stockB, BClose, abs(bshares))
-                    self.account.calculate_value(quotes)
 
+                    self.account.calculate_value(quotes)
+                    print(self.account.cash)
             self.date = addDate(self.date)
        
         
 def main():
     me = Trader('Leveraged Pair', ['UPRO', 'SPY'], [])
     me.action()
-    for key in me.account.tradelog.keys():
-        for i in range(len(me.account.tradelog[key])):
-            print(me.account.tradelog[key][i])
+    # for key in me.account.tradelog.keys():
+    #     for i in range(len(me.account.tradelog[key])):
+    #         print(me.account.tradelog[key][i])
     print(me.account.position)
-    me.account.accountvalue.plot(x='Date', y='Value')
+    me.account.accountvalue.plot(x='Date', y='Net Value')
     plt.show()
 if __name__ == '__main__':
     main()
