@@ -1,4 +1,5 @@
 from collections import defaultdict
+from email.quoprimime import quote
 from operator import index
 import pandas as pd
 
@@ -9,8 +10,6 @@ class TraderBot():
 
         ## Self Values
         self.position = defaultdict(int)
-        self.pnl = 0
-        self.pnlPerTicker = defaultdict(int)
         self.tradelog = defaultdict(list)
         self.accountvalue = pd.DataFrame(data={'Date' : [start_date], 'Net Value' : [self.cash]})
         self.value = self.cash
@@ -18,8 +17,8 @@ class TraderBot():
 
     def calculate_value(self, quotes):
         values = self.cash
+        date = quotes['SPY']['Date']
         for stock in self.position.keys():
-            date = quotes[stock]['Date']
             values += self.position[stock] * float(quotes[stock]['Close'])
         self.value = values
         newdata = pd.DataFrame(data={'Date' : [date], 'Net Value' : [self.value]})
@@ -28,13 +27,14 @@ class TraderBot():
     
 
     def buy(self, ticker, price, amount):
-        self.cash -= price * amount
+        amount = min(self.cash // price, amount)
+        self.cash -= (price * amount)
         self.position[ticker] += amount
         self.tradelog[ticker].append('Buy ' + ticker + ' at ' + str(price) + ' for ' + str(amount))
 
 
     def sell(self, ticker, price, amount):
-        self.cash += price * amount
+        self.cash += (price * amount)
         self.position[ticker] -= amount
         self.tradelog[ticker].append('Sell ' + ticker + ' at ' + str(price) + ' for ' + str(amount))
 
@@ -55,5 +55,6 @@ def main():
     bot.sell('AMZN', 3500, 700)
     print(bot.position, bot.cash)
     print(bot.tradelog)
+
 if __name__ == '__main__':
     main()

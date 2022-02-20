@@ -1,12 +1,7 @@
 from collections import defaultdict
-from email.policy import default
-from email.quoprimime import quote
 from logging import raiseExceptions
-from multiprocessing.sharedctypes import Value
 import os
 import datetime
-from pickle import NONE
-from queue import Empty
 import pandas as pd
 from ticker import *
 from traderbot import *
@@ -16,7 +11,7 @@ import matplotlib.pyplot as plt
 
 
 class Trader():
-    def __init__(self, strategy, stocks, commodities, aggressiveness=1.01, cash=1000000):
+    def __init__(self, strategy, stocks, commodities, aggressiveness=0.0001, cash=1000000, factor=100):
         self.market = Market(stocks, commodities)
 
         self.startDate = self.market.startDate
@@ -25,12 +20,13 @@ class Trader():
         self.account = TraderBot(self.startDate, cash)
 
         if (strategy == 'Leveraged Pair'):
-            self.strategy = Leveraged_Strategy(stocks[0], stocks[1], 3, aggressiveness)
+            self.strategy = Leveraged_Strategy(stocks[0], stocks[1], 3, aggressiveness, factor)
         else:
             self.strategy = None
     
     
     def action(self):
+        last_allocation = 0
         while (self.date <= self.endDate):
             quotes = self.market.getMarket(self.date)
             if (quotes != None):
@@ -41,17 +37,22 @@ class Trader():
                     BClose = float(stockBPrice['Close'])
                 
                     allocation = self.strategy.update(AClose, BClose)
+                    if (last_allocation != allocation):
+                        ashares = int(allocation * BClose - self.account.position[self.strategy.stockA])
+                        bshares = int(-allocation * AClose * self.strategy.ratio - self.account.position[self.strategy.stockB])
+                        if (ashares > 0):
+                            self.account.buy(self.strategy.stockA, AClose, ashares)
 
-                    ashares = int(allocation * BClose - self.account.position[self.strategy.stockA])
-                    bshares = int(-allocation * AClose * self.strategy.ratio - self.account.position[self.strategy.stockB])
-                    
-                    if (ashares > 0):
-                        self.account.sell(self.strategy.stockB, BClose, abs(bshares))
-                        self.account.buy(self.strategy.stockA, AClose, ashares)
-                    elif (ashares < 0):
-                        self.account.sell(self.strategy.stockA, AClose, abs(ashares))
-                        self.account.buy(self.strategy.stockB, BClose, bshares)
-
+                            need = int((-(self.account.position[self.strategy.stockA]) * AClose * self.strategy.ratio) / BClose - self.account.position[self.strategy.stockB])
+                            self.account.sell(self.strategy.stockB, BClose, abs(need))
+                            
+                        elif (ashares < 0):
+                            self.account.buy(self.strategy.stockB, BClose, bshares)
+                            
+                            need = int(-(self.account.position[self.strategy.stockB] * BClose) / (AClose * self.strategy.ratio) - self.account.position[self.strategy.stockA])
+                            self.account.sell(self.strategy.stockA, AClose, abs(need))
+                            
+                    last_allocation = allocation
                     self.account.calculate_value(quotes)
                     print(self.account.cash)
             self.date = addDate(self.date)
@@ -60,11 +61,10 @@ class Trader():
 def main():
     me = Trader('Leveraged Pair', ['UPRO', 'SPY'], [])
     me.action()
-    # for key in me.account.tradelog.keys():
-    #     for i in range(len(me.account.tradelog[key])):
-    #         print(me.account.tradelog[key][i])
     print(me.account.position)
     me.account.accountvalue.plot(x='Date', y='Net Value')
     plt.show()
+
+
 if __name__ == '__main__':
     main()
